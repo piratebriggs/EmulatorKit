@@ -7,7 +7,7 @@ all:	rc2014 rcbus-1802 rcbus-6303 rcbus-6502 rcbus-65c816-mini \
 	makedisk markiv mbc2 smallz80 sbc2g z80mc simple80 flexbox tiny68k \
 	s100-z80 scelbi rb-mbc rcbus-tms9995 rhyophyre pz1 68knano \
 	littleboard mini68k mb020 pico68 z80retro 2063 z50bus-z80 \
-	trcwm6809
+	trcwm6809 lottery
 
 sdl2:	rc2014_sdl2 nc100 nc200 n8_sdl2 scelbi_sdl2 nascom uk101 \
 	z180-mini-itx_sdl2 vz300 2063_sdl2 rcbus-8085_sdl2
@@ -38,6 +38,9 @@ rbcv2:	rbcv2.o 16x50.o ide.o ppide.o propio.o ramf.o rtc_bitbang.o w5100.o z80di
 
 searle:	searle.o ide.o z80dis.o libz80/libz80.o
 	cc -g3 searle.o ide.o z80dis.o libz80/libz80.o -o searle
+
+lottery:	lottery.o z80dis.o libz80/libz80.o
+	cc -g3 lottery.o z80dis.o libz80/libz80.o -o lottery
 
 linc80:	linc80.o ide.o sdcard.o libz80/libz80.o
 	cc -g3 linc80.o ide.o sdcard.o libz80/libz80.o -o linc80
