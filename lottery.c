@@ -48,7 +48,7 @@ static uint8_t live_irq;
 #define IRQ_SIOA	1
 #define IRQ_SIOB	2
 
-static volatile int done;
+volatile int emulator_done;
 
 #define TRACE_MEM	1
 #define TRACE_IO	2
@@ -118,6 +118,8 @@ static void mem_write(int unused, uint16_t addr, uint8_t val)
 	if (addr < 0x8000) {
 		if (trace & TRACE_MEM)
 			fprintf(stderr, "WL %04X -> %02X\n", addr, val);
+		if(ramsel < 8)
+			fprintf(stderr, "WR %d, %04X -> %02X\n", ramsel, addr, val);
 		ramL[addr + 0x8000 * ramsel] = val;
 //		fprintf(stderr, "WL %08X -> %02X\n", addr + 0x8000 * ramsel, val);
 	} else {
@@ -567,15 +569,17 @@ void pii_write(uint8_t addr, uint8_t val)
 		case 2:	/* Port B data */
             piireg[addr] = val;
 			ramsel = (val & 0xF0) >> 4;
-//			fprintf(stderr, "Ramsel %02X %02X\n", val, ramsel);
+			// fprintf(stderr, "Ramsel %02X %02X\n", val, ramsel);
+			break;
         case 3: /* Control register */
             if (val & 0x80) {
                 /* We could check the direction bits but we don't */
                 piireg[addr] = val;
             	piireg[0] = piireg[1] = piireg[2] = 0;
 				ramsel = 0;
-//				fprintf(stderr, "PII control %02X\n", val);
+				// fprintf(stderr, "PII control %02X\n", val);
             }
+			break;
 	}
 }
 
@@ -644,7 +648,7 @@ static struct termios saved_term, term;
 static void cleanup(int sig)
 {
 	tcsetattr(0, TCSADRAIN, &saved_term);
-	exit(1);
+	emulator_done = 1;
 }
 
 static void exit_cleanup(void)
@@ -665,6 +669,7 @@ int main(int argc, char *argv[])
 	int fd;
 	int l;
 	char *rompath = "LOT_std.rom";
+	char *saverompath = "LOT_std_save.rom";
 
 	while ((opt = getopt(argc, argv, "d:i:r:fbBtT")) != -1) {
 		switch (opt) {
@@ -692,8 +697,8 @@ int main(int argc, char *argv[])
 		perror(rompath);
 		exit(EXIT_FAILURE);
 	}
-	l = read(fd, ramL, 131072);
-	if (l != 131072 ) {
+	l = read(fd, ramL, 0x8000 * 8);
+	if (l != 0x8000 * 8 ) {
 		fprintf(stderr, "lottery: ROM size must be 128K.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -735,7 +740,7 @@ int main(int argc, char *argv[])
 	   matched with that. The scheme here works fine except when the host
 	   is loaded though */
 
-	while (!done) {
+	while (!emulator_done) {
 		int l;
 		for (l = 0; l < 10; l++) {
 			int i;
@@ -761,5 +766,15 @@ int main(int argc, char *argv[])
 		}
 		timer_pulse();
 	}
+
+	fd = open(saverompath, O_RDWR);
+	lseek(fd, 0L, SEEK_SET);
+	if (write(fd, ramL, 0x8000 * 8) != 0x8000 * 8) {
+		fprintf(stderr, "lottery: state save failed.\n");
+		exit(1);
+	}
+	close(fd);
+
+
 	exit(0);
 }
