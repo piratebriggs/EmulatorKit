@@ -569,7 +569,8 @@ void pii_write(uint8_t addr, uint8_t val)
 		case 2:	/* Port B data */
             piireg[addr] = val;
 			ramsel = (val & 0xF0) >> 4;
-			// fprintf(stderr, "Ramsel %02X %02X\n", val, ramsel);
+			if(ramsel == 0x0F)
+				fprintf(stderr, "Ramsel %02X %02X\n", val, ramsel);
 			break;
         case 3: /* Control register */
             if (val & 0x80) {
@@ -645,6 +646,11 @@ static void reti_event(void)
 
 static struct termios saved_term, term;
 
+static void reboot(int sig)
+{
+	Z80RESET(&cpu_z80);
+}
+
 static void cleanup(int sig)
 {
 	tcsetattr(0, TCSADRAIN, &saved_term);
@@ -716,13 +722,13 @@ int main(int argc, char *argv[])
 	if (tcgetattr(0, &term) == 0) {
 		saved_term = term;
 		atexit(exit_cleanup);
-		signal(SIGINT, cleanup);
+		signal(SIGINT, reboot);
 		signal(SIGQUIT, cleanup);
 		signal(SIGPIPE, cleanup);
 		term.c_lflag &= ~(ICANON | ECHO);
 		term.c_cc[VMIN] = 0;
 		term.c_cc[VTIME] = 1;
-		term.c_cc[VINTR] = 0;
+		// term.c_cc[VINTR] = 0;
 		term.c_cc[VSUSP] = 0;
 		term.c_cc[VSTOP] = 0;
 		tcsetattr(0, TCSADRAIN, &term);
