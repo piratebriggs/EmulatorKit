@@ -558,15 +558,16 @@ void pii_reset()
 
 void pii_write(uint8_t addr, uint8_t val)
 {
+	// fprintf(stderr, "PPI write %d:%02X\n", addr, val);
     switch(addr) {
         case 0:	/* Port A data */
             piireg[addr] = val;
+//			fprintf(stderr, "PII Debug: %02X\n", val);
 			break;
         case 1:	/* Port B data */
             piireg[addr] = val;
-//			fprintf(stderr, "PII Debug: %02X\n", val);
 			break;
-		case 2:	/* Port B data */
+		case 2:	/* Port C data */
             piireg[addr] = val;
 			ramsel = (val & 0xF0) >> 4;
 			if(ramsel == 0x0F)
@@ -586,7 +587,7 @@ void pii_write(uint8_t addr, uint8_t val)
 
 uint8_t pii_read(uint8_t addr)
 {
-	fprintf(stderr, "PPI read %d:%02X\n", addr, piireg[addr]);
+	// fprintf(stderr, "PPI read %d:%02X\n", addr, piireg[addr]);
     return piireg[addr];
 }
 
