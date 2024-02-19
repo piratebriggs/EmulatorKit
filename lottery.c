@@ -562,16 +562,17 @@ void pii_write(uint8_t addr, uint8_t val)
     switch(addr) {
         case 0:	/* Port A data */
             piireg[addr] = val;
-//			fprintf(stderr, "PII Debug: %02X\n", val);
 			break;
         case 1:	/* Port B data */
-            piireg[addr] = val;
+            if((piireg[addr] & 0x70) != (val & 0x70))
+				fprintf(stderr, "PII Debug: %02X\n", (val & 0x70)>>4);
+			piireg[addr] = val;
+			ramsel = (val & 0x0F);
+			if(ramsel == 0x0F)
+				fprintf(stderr, "Ramsel %02X %02X\n", val, ramsel);
 			break;
 		case 2:	/* Port C data */
             piireg[addr] = val;
-			ramsel = (val & 0xF0) >> 4;
-			if(ramsel == 0x0F)
-				fprintf(stderr, "Ramsel %02X %02X\n", val, ramsel);
 			break;
         case 3: /* Control register */
             if (val & 0x80) {
@@ -705,8 +706,8 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	l = read(fd, ramL, 0x8000 * 8);
-	if (l != 0x8000 * 8 ) {
-		fprintf(stderr, "lottery: ROM size must be 128K.\n");
+	if (l != 0x8000 * 8 && l != 0x2000 ) {
+		fprintf(stderr, "lottery: ROM size must be 128K or 8k.\n");
 		exit(EXIT_FAILURE);
 	}
 
